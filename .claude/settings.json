@@ -1,0 +1,68 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run:*)",
+      "Bash(npm test:*)",
+      "Bash(npx:*)",
+      "Bash(pnpm:*)",
+      "Bash(bun:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git diff:*)",
+      "Bash(git status:*)",
+      "Bash(git log:*)",
+      "Bash(supabase:*)",
+      "Bash(vercel:*)",
+      "Bash(gh:*)"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(./secrets/**)",
+      "Read(./**/credentials*)"
+    ],
+    "ask": [
+      "Bash(git push:*)",
+      "Bash(rm -rf:*)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/markdown_formatter.py"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/file_protector.py"
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "osascript -e 'display notification \"Claude needs your input\" with title \"Claude Code\"'"
+          }
+        ]
+      }
+    ]
+  },
+  "attribution": {
+    "commit": "Generated with Claude Code\n\nCo-Authored-By: Claude <noreply@anthropic.com>",
+    "pr": "Generated with Claude Code"
+  }
+}

@@ -1,0 +1,79 @@
+@import "tailwindcss";
+
+@theme {
+  --font-family-sans: 'Inter', 'system-ui', 'sans-serif';
+  --radius-2xl: 1rem;
+  --radius-3xl: 1.5rem;
+  --shadow-card: 0 4px 24px -4px rgba(0, 0, 0, 0.08);
+  --shadow-card-hover: 0 8px 32px -4px rgba(0, 0, 0, 0.12);
+
+  /* CSS custom properties for theming - Razzmatazz #ED0D51 */
+  --color-background: oklch(100% 0 0);
+  --color-foreground: oklch(14.9% 0.05 12);
+  --color-card: oklch(100% 0 0);
+  --color-card-foreground: oklch(14.9% 0.05 12);
+  --color-primary: oklch(58% 0.24 15);
+  --color-primary-foreground: oklch(100% 0 0);
+  --color-secondary: oklch(96.5% 0.02 12);
+  --color-secondary-foreground: oklch(20.9% 0.04 12);
+  --color-muted: oklch(96.5% 0.01 12);
+  --color-muted-foreground: oklch(49% 0.03 12);
+  --color-accent: oklch(96.5% 0.02 12);
+  --color-accent-foreground: oklch(20.9% 0.04 12);
+  --color-destructive: oklch(62.8% 0.26 29.2);
+  --color-destructive-foreground: oklch(98.4% 0.01 0);
+  --color-border: oklch(92.8% 0.01 12);
+  --color-input: oklch(92.8% 0.01 12);
+  --color-ring: oklch(58% 0.24 15);
+  --radius: 0.75rem;
+
+  /* Brand colors - Razzmatazz palette */
+  --color-brand-50: oklch(97% 0.02 15);
+  --color-brand-100: oklch(94% 0.05 15);
+  --color-brand-200: oklch(88% 0.10 15);
+  --color-brand-300: oklch(78% 0.16 15);
+  --color-brand-400: oklch(68% 0.20 15);
+  --color-brand-500: oklch(58% 0.24 15);
+  --color-brand-600: oklch(50% 0.22 15);
+  --color-brand-700: oklch(42% 0.20 15);
+  --color-brand-800: oklch(35% 0.17 15);
+  --color-brand-900: oklch(28% 0.14 15);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Custom scrollbar for chat */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.1);
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 0, 0, 0.2);
+}

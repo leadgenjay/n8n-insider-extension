@@ -1,0 +1,510 @@
+{
+  "name": "Stripe Webhook Handler - N8N Insider",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "stripe-payments",
+        "options": {
+          "rawBody": true
+        }
+      },
+      "id": "webhook-trigger",
+      "name": "Stripe Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [250, 300],
+      "webhookId": "stripe-payments"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Verify Stripe webhook signature\nconst crypto = require('crypto');\n\nconst webhookSecret = $env.STRIPE_WEBHOOK_SECRET;\nconst signature = $input.first().headers['stripe-signature'];\nconst rawBody = $input.first().body;\n\nif (!webhookSecret) {\n  throw new Error('STRIPE_WEBHOOK_SECRET not configured');\n}\n\nif (!signature) {\n  throw new Error('No Stripe signature found');\n}\n\n// Parse signature header\nconst sigParts = signature.split(',').reduce((acc, part) => {\n  const [key, value] = part.split('=');\n  acc[key] = value;\n  return acc;\n}, {});\n\nconst timestamp = sigParts.t;\nconst expectedSig = sigParts.v1;\n\n// Verify timestamp (reject if older than 5 minutes)\nconst tolerance = 300; // 5 minutes\nconst currentTime = Math.floor(Date.now() / 1000);\nif (currentTime - parseInt(timestamp) > tolerance) {\n  throw new Error('Webhook timestamp too old');\n}\n\n// Compute expected signature\nconst signedPayload = `${timestamp}.${typeof rawBody === 'string' ? rawBody : JSON.stringify(rawBody)}`;\nconst computedSig = crypto\n  .createHmac('sha256', webhookSecret)\n  .update(signedPayload)\n  .digest('hex');\n\n// Compare signatures\nif (computedSig !== expectedSig) {\n  throw new Error('Invalid webhook signature');\n}\n\n// Parse the event\nconst event = typeof rawBody === 'string' ? JSON.parse(rawBody) : rawBody;\n\nreturn {\n  json: {\n    eventType: event.type,\n    eventId: event.id,\n    data: event.data.object,\n    verified: true\n  }\n};"
+      },
+      "id": "verify-signature",
+      "name": "Verify Stripe Signature",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [470, 300]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.eventType }}",
+                    "rightValue": "checkout.session.completed",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "checkout_completed"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.eventType }}",
+                    "rightValue": "customer.subscription.updated",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "subscription_updated"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.eventType }}",
+                    "rightValue": "customer.subscription.deleted",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "subscription_deleted"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.eventType }}",
+                    "rightValue": "invoice.payment_failed",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "payment_failed"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "none"
+        }
+      },
+      "id": "switch-event",
+      "name": "Route by Event Type",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [690, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract data for checkout.session.completed\nconst session = $input.first().json.data;\n\nconst userId = session.client_reference_id;\nconst customerId = session.customer;\nconst subscriptionId = session.subscription;\n\nif (!userId) {\n  throw new Error('No client_reference_id found in checkout session');\n}\n\nreturn {\n  json: {\n    userId,\n    customerId,\n    subscriptionId,\n    subscriptionStatus: 'active',\n    eventType: 'checkout_completed'\n  }\n};"
+      },
+      "id": "extract-checkout",
+      "name": "Extract Checkout Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [910, 100]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract data for subscription updated\nconst subscription = $input.first().json.data;\n\nconst subscriptionId = subscription.id;\nconst customerId = subscription.customer;\nconst status = subscription.status; // active, canceled, past_due, unpaid, etc.\nconst currentPeriodEnd = subscription.current_period_end;\n\n// Map Stripe status to our status\nlet subscriptionStatus = 'free';\nif (status === 'active') {\n  subscriptionStatus = 'active';\n} else if (status === 'canceled') {\n  subscriptionStatus = 'canceled';\n} else if (status === 'past_due' || status === 'unpaid') {\n  subscriptionStatus = 'past_due';\n}\n\n// Convert Unix timestamp to ISO date\nconst endDate = currentPeriodEnd \n  ? new Date(currentPeriodEnd * 1000).toISOString()\n  : null;\n\nreturn {\n  json: {\n    subscriptionId,\n    customerId,\n    subscriptionStatus,\n    subscriptionEndDate: endDate,\n    eventType: 'subscription_updated'\n  }\n};"
+      },
+      "id": "extract-sub-updated",
+      "name": "Extract Subscription Update",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [910, 260]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract data for subscription deleted\nconst subscription = $input.first().json.data;\n\nconst subscriptionId = subscription.id;\nconst customerId = subscription.customer;\n\nreturn {\n  json: {\n    subscriptionId,\n    customerId,\n    subscriptionStatus: 'free',\n    subscriptionEndDate: null,\n    clearSubscriptionId: true,\n    eventType: 'subscription_deleted'\n  }\n};"
+      },
+      "id": "extract-sub-deleted",
+      "name": "Extract Deletion Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [910, 420]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract data for payment failed\nconst invoice = $input.first().json.data;\n\nconst subscriptionId = invoice.subscription;\nconst customerId = invoice.customer;\n\nreturn {\n  json: {\n    subscriptionId,\n    customerId,\n    subscriptionStatus: 'past_due',\n    eventType: 'payment_failed'\n  }\n};"
+      },
+      "id": "extract-payment-failed",
+      "name": "Extract Payment Failed",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [910, 580]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "profiles",
+        "filterType": "string",
+        "filterString": "={{ 'id=eq.' + $json.userId }}",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldName": "subscription_status",
+              "fieldValue": "={{ $json.subscriptionStatus }}"
+            },
+            {
+              "fieldName": "stripe_customer_id",
+              "fieldValue": "={{ $json.customerId }}"
+            },
+            {
+              "fieldName": "subscription_id",
+              "fieldValue": "={{ $json.subscriptionId }}"
+            },
+            {
+              "fieldName": "updated_at",
+              "fieldValue": "={{ $now.toISO() }}"
+            }
+          ]
+        }
+      },
+      "id": "supabase-checkout",
+      "name": "Update Profile - Checkout",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1130, 100],
+      "credentials": {
+        "supabaseApi": {
+          "id": "SUPABASE_CREDENTIAL_ID",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "profiles",
+        "filterType": "string",
+        "filterString": "={{ 'subscription_id=eq.' + $json.subscriptionId }}",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldName": "subscription_status",
+              "fieldValue": "={{ $json.subscriptionStatus }}"
+            },
+            {
+              "fieldName": "subscription_end_date",
+              "fieldValue": "={{ $json.subscriptionEndDate }}"
+            },
+            {
+              "fieldName": "updated_at",
+              "fieldValue": "={{ $now.toISO() }}"
+            }
+          ]
+        }
+      },
+      "id": "supabase-sub-updated",
+      "name": "Update Profile - Sub Updated",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1130, 260],
+      "credentials": {
+        "supabaseApi": {
+          "id": "SUPABASE_CREDENTIAL_ID",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "profiles",
+        "filterType": "string",
+        "filterString": "={{ 'subscription_id=eq.' + $json.subscriptionId }}",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldName": "subscription_status",
+              "fieldValue": "free"
+            },
+            {
+              "fieldName": "subscription_id",
+              "fieldValue": ""
+            },
+            {
+              "fieldName": "subscription_end_date",
+              "fieldValue": ""
+            },
+            {
+              "fieldName": "updated_at",
+              "fieldValue": "={{ $now.toISO() }}"
+            }
+          ]
+        }
+      },
+      "id": "supabase-sub-deleted",
+      "name": "Update Profile - Sub Deleted",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1130, 420],
+      "credentials": {
+        "supabaseApi": {
+          "id": "SUPABASE_CREDENTIAL_ID",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "profiles",
+        "filterType": "string",
+        "filterString": "={{ 'subscription_id=eq.' + $json.subscriptionId }}",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldName": "subscription_status",
+              "fieldValue": "past_due"
+            },
+            {
+              "fieldName": "updated_at",
+              "fieldValue": "={{ $now.toISO() }}"
+            }
+          ]
+        }
+      },
+      "id": "supabase-payment-failed",
+      "name": "Update Profile - Payment Failed",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1130, 580],
+      "credentials": {
+        "supabaseApi": {
+          "id": "SUPABASE_CREDENTIAL_ID",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ received: true, event: $('Route by Event Type').first().json.eventType }) }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "respond-success",
+      "name": "Respond OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1350, 300]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "merged",
+              "name": "processed",
+              "value": true,
+              "type": "boolean"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "merge-results",
+      "name": "Merge Results",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1350, 420]
+    }
+  ],
+  "connections": {
+    "Stripe Webhook": {
+      "main": [
+        [
+          {
+            "node": "Verify Stripe Signature",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify Stripe Signature": {
+      "main": [
+        [
+          {
+            "node": "Route by Event Type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by Event Type": {
+      "main": [
+        [
+          {
+            "node": "Extract Checkout Data",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Extract Subscription Update",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Extract Deletion Data",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Extract Payment Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Checkout Data": {
+      "main": [
+        [
+          {
+            "node": "Update Profile - Checkout",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Subscription Update": {
+      "main": [
+        [
+          {
+            "node": "Update Profile - Sub Updated",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Deletion Data": {
+      "main": [
+        [
+          {
+            "node": "Update Profile - Sub Deleted",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Payment Failed": {
+      "main": [
+        [
+          {
+            "node": "Update Profile - Payment Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Profile - Checkout": {
+      "main": [
+        [
+          {
+            "node": "Respond OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Profile - Sub Updated": {
+      "main": [
+        [
+          {
+            "node": "Respond OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Profile - Sub Deleted": {
+      "main": [
+        [
+          {
+            "node": "Respond OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Profile - Payment Failed": {
+      "main": [
+        [
+          {
+            "node": "Respond OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "payments"
+    },
+    {
+      "name": "stripe"
+    }
+  ],
+  "triggerCount": 1,
+  "pinData": {}
+}
