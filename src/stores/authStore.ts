@@ -9,22 +9,12 @@ interface AuthState {
   loading: boolean
   error: string | null
 
-  // Signup verification state
-  signupPendingVerification: boolean
-  signupEmail: string | null
-  resendLoading: boolean
-  resendSuccess: boolean
-  resendError: string | null
-
   // Actions
   initialize: () => Promise<void>
   signInWithEmail: (email: string, password: string) => Promise<void>
   signUpWithEmail: (email: string, password: string) => Promise<void>
-  signInWithGoogle: () => Promise<void>
   signOut: () => Promise<void>
   fetchProfile: () => Promise<void>
-  resendVerificationEmail: (email: string) => Promise<void>
-  clearSignupState: () => void
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -33,13 +23,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   profile: null,
   loading: true,
   error: null,
-
-  // Signup verification state
-  signupPendingVerification: false,
-  signupEmail: null,
-  resendLoading: false,
-  resendSuccess: false,
-  resendError: null,
 
   initialize: async () => {
     try {
@@ -92,40 +75,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   signUpWithEmail: async (email: string, password: string) => {
     try {
-      set({ loading: true, error: null, resendSuccess: false, resendError: null })
-
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-      })
-
-      if (error) throw error
-
-      // Check if email confirmation is required
-      // When email confirmation is enabled, user is returned but session is null
-      if (data.user && !data.session) {
-        set({
-          signupPendingVerification: true,
-          signupEmail: email,
-        })
-      }
-    } catch (error) {
-      set({ error: String(error) })
-      throw error
-    } finally {
-      set({ loading: false })
-    }
-  },
-
-  signInWithGoogle: async () => {
-    try {
       set({ loading: true, error: null })
 
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: chrome.runtime.getURL('sidepanel.html'),
-        },
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
       })
 
       if (error) throw error
@@ -171,34 +125,5 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     } catch (error) {
       console.error('Error fetching profile:', error)
     }
-  },
-
-  resendVerificationEmail: async (email: string) => {
-    try {
-      set({ resendLoading: true, resendError: null, resendSuccess: false })
-
-      const { error } = await supabase.auth.resend({
-        type: 'signup',
-        email: email,
-      })
-
-      if (error) throw error
-
-      set({ resendSuccess: true })
-    } catch (error) {
-      set({ resendError: String(error) })
-      throw error
-    } finally {
-      set({ resendLoading: false })
-    }
-  },
-
-  clearSignupState: () => {
-    set({
-      signupPendingVerification: false,
-      signupEmail: null,
-      resendSuccess: false,
-      resendError: null,
-    })
   },
 }))

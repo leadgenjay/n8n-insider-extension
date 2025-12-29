@@ -3,20 +3,12 @@ import { Mail, Lock, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useAuthStore } from '@/stores/authStore'
-import { EmailVerificationPending } from './EmailVerificationPending'
 
 export function LoginForm() {
   const [isSignUp, setIsSignUp] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const {
-    signInWithEmail,
-    signUpWithEmail,
-    loading,
-    error,
-    signupPendingVerification,
-    signupEmail,
-  } = useAuthStore()
+  const { signInWithEmail, signUpWithEmail, loading, error } = useAuthStore()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -29,22 +21,6 @@ export function LoginForm() {
     } catch {
       // Error is handled by the store
     }
-  }
-
-  const handleBackToLogin = () => {
-    setIsSignUp(false)
-    setPassword('')
-    // Email is preserved so user can easily sign in after verifying
-  }
-
-  // Show verification pending screen if signup was successful but needs email verification
-  if (signupPendingVerification && signupEmail) {
-    return (
-      <EmailVerificationPending
-        email={signupEmail}
-        onBackToLogin={handleBackToLogin}
-      />
-    )
   }
 
   return (

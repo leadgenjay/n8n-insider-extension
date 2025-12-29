@@ -1,22 +1,63 @@
 # N8N Insider - Project Handoff
 
-**Last Updated:** December 27, 2025
+**Last Updated:** December 28, 2025
 
 ---
 
-## 🎯 Current Work: Stripe Subscription Integration
+## 🚨 URGENT: Email Confirmation Redirect Broken
 
-Implementing **$10/mo Pro subscription** with Stripe for the N8N Insider Chrome Extension.
+### Problem
+When users click "Confirm your email" in Supabase confirmation email, they get redirected to `localhost:3000` which shows "This site can't be reached" error.
 
-### ✅ Completed Today
+### Root Cause
+Supabase's Site URL is set to `http://localhost:3000` (default). Since this is a Chrome extension, there's no localhost server.
+
+### Fix Required
+1. Go to **Supabase Dashboard** → **Authentication** → **URL Configuration**
+2. Change **Site URL** from `http://localhost:3000` to your landing page URL
+3. Create a simple `/auth/confirmed` page on your landing site that says:
+   ```
+   Email Confirmed!
+   You can now close this tab and sign in using the N8N Insider extension.
+   ```
+
+---
+
+## ✅ Completed Today (Dec 28)
 
 | Task | Files Modified |
 |------|----------------|
+| Fixed AI markdown/verbosity (prompt engineering) | `src/lib/openrouter.ts` |
+| Added `stripMarkdown()` defense-in-depth | `src/lib/openrouter.ts` |
+| Removed Google OAuth login | `src/components/auth/LoginForm.tsx` |
+
+### AI Markdown Fix Details
+- **Problem:** AI outputting `**bold**` markdown despite instructions
+- **Root Cause:** System prompt contradicted itself (used bullets while forbidding them)
+- **Solution:**
+  - Moved output format instructions to FIRST position (primacy effect)
+  - Rewrote all sections as prose paragraphs (lead by example)
+  - Added closing reminder (recency effect)
+  - Added `stripMarkdown()` function as backup enforcement
+
+### Google OAuth Removal
+- **Problem:** Browser popup blocker silently blocking OAuth popup
+- **Solution:** Removed Google login button entirely, now email/password only
+
+---
+
+## 📋 Previous Work: Stripe Subscription Integration
+
+Implementing **$10/mo Pro subscription** with Stripe (started Dec 27).
+
+### ✅ Completed Previously
+
+| Task | Files |
+|------|-------|
 | Database migration (subscription fields) | `supabase/migrations/20250127000001_add_subscription_fields.sql` |
 | Profile TypeScript interface | `src/lib/supabase.ts` |
 | Pro access check (subscriptions + grace period) | `src/components/chat/MessageInput.tsx` |
 | Settings Panel subscription UI | `src/components/settings/SettingsPanel.tsx` |
-| Usage blocked upgrade CTA | `src/components/chat/MessageInput.tsx` |
 | N8N webhook workflow | `n8n-workflows/stripe-webhook-handler.json` |
 | Setup guide | `n8n-workflows/STRIPE-SETUP.md` |
 
@@ -49,12 +90,6 @@ Add to your Claude Code MCP config to continue Stripe setup:
 }
 ```
 
-Then ask Claude to:
-1. Create product "N8N Insider Pro"
-2. Create price $10/month recurring
-3. Create payment link with `client_reference_id`
-4. Set up webhook endpoint pointing to n8n
-
 ---
 
 ## 📝 Code Placeholders to Replace
@@ -72,9 +107,9 @@ const STRIPE_PORTAL_LINK = 'https://billing.stripe.com/p/login/YOUR_PORTAL_LINK'
 
 ---
 
-## 📊 Database Schema (New Fields)
+## 📊 Database Schema (Subscription Fields)
 
-Applied to Supabase via MCP:
+Applied to Supabase:
 
 ```sql
 -- Added to profiles table
@@ -89,40 +124,6 @@ idx_profiles_stripe_customer_id
 
 ---
 
-## 📁 New Files Created Today
-
-```
-n8n-workflows/
-├── stripe-webhook-handler.json    # Import to n8n
-└── STRIPE-SETUP.md                # Full setup instructions
-
-supabase/migrations/
-└── 20250127000001_add_subscription_fields.sql
-```
-
----
-
-## 🔄 Other Fixes Made Today
-
-| Fix | File |
-|-----|------|
-| AI response quality (stricter prompt, no markdown) | `src/lib/openrouter.ts` |
-| n8n AI Agent fallback model knowledge | `src/lib/openrouter.ts` |
-| Expressions as plain text (no backticks) | `src/lib/openrouter.ts` |
-| Feedback follow-up on thumbs down | `src/components/chat/MessageFeedback.tsx` |
-| Title generation after 2 messages (was 3) | `src/stores/chatStore.ts` |
-
----
-
-## ✅ Build Status
-
-Build passes successfully:
-```bash
-npm run build  # ✅ Completes without errors
-```
-
----
-
 ## 🏗️ Project Overview
 
 A Chrome Extension Side Panel AI assistant for n8n workflow automation:
@@ -133,14 +134,16 @@ A Chrome Extension Side Panel AI assistant for n8n workflow automation:
 
 ---
 
-## 📋 Key Files Reference
+## 📁 Key Files Reference
 
 ```
 src/
 ├── lib/
 │   ├── supabase.ts              # Profile interface with subscription fields
-│   └── openrouter.ts            # System prompt, AI client
+│   └── openrouter.ts            # System prompt, AI client, stripMarkdown()
 ├── components/
+│   ├── auth/
+│   │   └── LoginForm.tsx        # Email/password login only
 │   ├── chat/
 │   │   ├── MessageInput.tsx     # isPro() function, upgrade CTA
 │   │   └── MessageFeedback.tsx  # Thumbs up/down with follow-up
@@ -153,34 +156,15 @@ src/
 
 ---
 
-## 🚀 Next Session: Continue Stripe Setup
+## 🚀 Next Session Priority
 
-1. Configure Stripe MCP in Claude Code
-2. Use MCP to create Stripe resources
-3. Update placeholder URLs in code
-4. Import n8n workflow and configure
+1. **Fix email confirmation redirect** (Supabase URL Configuration)
+2. Configure Stripe MCP in Claude Code
+3. Create Stripe resources via MCP
+4. Update placeholder URLs in code
 5. Test end-to-end subscription flow
 
 ---
-
-*Previous handoff content preserved below for reference*
-
----
-
-# Previous Project State (Dec 26, 2024)
-
-## Configuration Required
-
-### Environment Variables
-Create `.env.local` in project root:
-```env
-VITE_SUPABASE_URL=https://yndcawdtkpqulpzxkwif.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-```
-
-### Supabase Project
-- **Project ID:** `yndcawdtkpqulpzxkwif`
-- **URL:** `https://yndcawdtkpqulpzxkwif.supabase.co`
 
 ## How to Build & Test
 
@@ -192,14 +176,14 @@ npm run build
 ### Load in Chrome
 1. Open `chrome://extensions/`
 2. Enable "Developer mode"
-3. Click "Load unpacked"
-4. Select the `dist/` folder
+3. Click refresh icon on N8N Insider (or "Load unpacked" → select `dist/`)
 
-## AI Models Configured
+---
 
-| Model ID | Name |
-|----------|------|
-| `anthropic/claude-3.5-sonnet` | Claude 3.5 Sonnet (Default) |
-| `deepseek/deepseek-chat` | DeepSeek V3 |
-| `anthropic/claude-opus-4` | Claude Opus 4.5 |
-| `google/gemini-pro-1.5` | Gemini 1.5 Pro |
+## Environment Variables
+
+Create `.env.local` in project root:
+```env
+VITE_SUPABASE_URL=https://yndcawdtkpqulpzxkwif.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
