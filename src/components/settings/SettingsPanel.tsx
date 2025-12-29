@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { X, Check, AlertCircle, Loader2, LogOut, ExternalLink, CreditCard } from 'lucide-react'
+import { X, Check, AlertCircle, Loader2, LogOut, ExternalLink, CreditCard, Play } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useSettingsStore, AI_MODELS, type AssistantMode } from '@/stores/settingsStore'
@@ -11,6 +11,8 @@ import type { Profile } from '@/lib/supabase'
 const STRIPE_PAYMENT_LINK = 'https://buy.stripe.com/6oU14mcrU7QF4Ev3gK4ko0w'
 // Stripe Customer Portal - for managing subscriptions
 const STRIPE_PORTAL_LINK = 'https://billing.stripe.com/p/login/cN23e7dmD84e3IYaEE'
+// Setup video walkthrough
+const SETUP_VIDEO_URL = 'https://www.loom.com/share/e4b2d8d73ed64182b53c5217a41e5e81'
 
 // Get subscription display info
 function getSubscriptionInfo(profile: Profile | null): {
@@ -118,6 +120,26 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
           <section>
             <h3 className="text-sm font-medium mb-4">Account</h3>
             <SubscriptionCard profile={profile} />
+          </section>
+
+          {/* Setup Guide */}
+          <section>
+            <h3 className="text-sm font-medium mb-2">Getting Started</h3>
+            <a
+              href={SETUP_VIDEO_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 p-4 rounded-lg border border-border bg-primary/5 hover:bg-primary/10 transition-colors"
+            >
+              <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+                <Play className="w-5 h-5 text-white" />
+              </div>
+              <div className="flex-1">
+                <p className="font-medium text-sm">Watch Setup Guide</p>
+                <p className="text-xs text-muted-foreground">Learn how to configure the extension</p>
+              </div>
+              <ExternalLink className="w-4 h-4 text-muted-foreground" />
+            </a>
           </section>
 
           {/* Assistant Mode */}
