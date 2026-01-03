@@ -1,6 +1,6 @@
 import { useSettingsStore } from '@/stores/settingsStore'
 import type { Message } from '@/lib/supabase'
-import { N8N_TOOLS } from './n8n-tools'
+import { N8N_TOOLS, WEB_SEARCH_TOOLS } from './n8n-tools'
 import type { ToolCall } from './tool-executor'
 
 // Re-export ToolCall for consumers
@@ -134,6 +134,14 @@ For cron expressions, n8n uses 6 fields including seconds: "0 * * * * *" fires e
 For large data, use "Execute Once" on nodes that process once per batch. For memory issues, use SplitInBatches. For slow workflows, check for Wait nodes or rate limits.
 </common_issues>
 
+<api_troubleshooting>
+When users encounter API authentication or connection errors like 401 Unauthorized, 403 Forbidden, invalid credentials, or other API-specific issues, always ask first: "Do you have documentation for this API, or would you like me to search for it?"
+
+If user provides a documentation URL, use the fetch_url tool to read the page content. If user asks you to search, use the search_documentation tool with a specific query like "Stripe API authentication" or "Gmail OAuth setup". After getting documentation, provide informed guidance based on the actual API requirements rather than generic advice.
+
+Only use web search tools when the user confirms they want documentation help. Never search without asking first.
+</api_troubleshooting>
+
 <workflow_patterns>
 For webhook workflows, add an Error Workflow for failure handling and use Respond to Webhook for synchronous responses. For error handling, use the Error Trigger node and add IF nodes before processing to check for empty data. For transformations, use Code node for complex logic, Set node for simple mapping, and Merge node to combine sources.
 </workflow_patterns>
@@ -230,10 +238,16 @@ export async function sendChatMessage(
   // Note: Streaming is disabled when tools are enabled (OpenRouter limitation)
   const useStreaming = streaming?.onToken && !shouldIncludeTools
 
+  // Get Tavily key to determine if web search is available
+  const { tavilyApiKey } = useSettingsStore.getState()
+  const webSearchAvailable = !!tavilyApiKey
+
   if (shouldIncludeTools) {
-    requestBody.tools = N8N_TOOLS
+    // Include n8n tools + web search tools (if configured)
+    const allTools = webSearchAvailable ? [...N8N_TOOLS, ...WEB_SEARCH_TOOLS] : N8N_TOOLS
+    requestBody.tools = allTools
     requestBody.tool_choice = 'auto'
-    console.log('[n8n-copilot] Including', N8N_TOOLS.length, 'tools in request (builder mode, action detected)')
+    console.log('[n8n-copilot] Including', allTools.length, 'tools in request (builder mode, action detected)', webSearchAvailable ? '(with web search)' : '')
   } else if (messageIsQuestion) {
     console.log('[n8n-copilot] Question detected - NOT including tools (will answer only)')
   } else if (assistantMode === 'helper') {
@@ -407,8 +421,11 @@ export async function generateConversationTitle(
   const { openRouterApiKey } = useSettingsStore.getState()
 
   if (!openRouterApiKey) {
+    console.log('[openrouter] Cannot generate title: no API key configured')
     return 'New Conversation'
   }
+
+  console.log('[openrouter] Generating title for', messages.length, 'messages')
 
   try {
     // Use a fast, cheap model for title generation
@@ -443,10 +460,12 @@ export async function generateConversationTitle(
     }
 
     const data = await response.json()
-    const title = data.choices?.[0]?.message?.content?.trim() || 'New Conversation'
+    const rawTitle = data.choices?.[0]?.message?.content?.trim() || 'New Conversation'
 
     // Clean up the title - remove quotes and limit length
-    return title.replace(/^["']|["']$/g, '').slice(0, 50)
+    const title = rawTitle.replace(/^["']|["']$/g, '').slice(0, 50)
+    console.log('[openrouter] Generated title:', title)
+    return title
   } catch (error) {
     console.error('[n8n-copilot] Error generating title:', error)
     return 'New Conversation'

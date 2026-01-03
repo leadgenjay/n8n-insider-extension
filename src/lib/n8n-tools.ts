@@ -212,6 +212,48 @@ export const N8N_TOOLS: Tool[] = [
   },
 ]
 
+// Web search tools (read-only, no confirmation needed)
+export const WEB_SEARCH_TOOLS: Tool[] = [
+  {
+    type: 'function',
+    function: {
+      name: 'search_documentation',
+      description: 'Search the web for API documentation. Use this when the user confirms they want you to search for documentation about an API they are having trouble with.',
+      parameters: {
+        type: 'object',
+        properties: {
+          query: {
+            type: 'string',
+            description: 'The search query. Include the API name and what information is needed (e.g., "Stripe API authentication guide", "Gmail API OAuth2 setup")',
+          },
+          api_name: {
+            type: 'string',
+            description: 'The name of the API being searched for (e.g., "Stripe", "Gmail", "Shopify")',
+          },
+        },
+        required: ['query', 'api_name'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'fetch_url',
+      description: 'Fetch and read content from a URL that the user provided. Use this when the user shares a link to documentation.',
+      parameters: {
+        type: 'object',
+        properties: {
+          url: {
+            type: 'string',
+            description: 'The full URL to fetch (must start with http:// or https://)',
+          },
+        },
+        required: ['url'],
+      },
+    },
+  },
+]
+
 // Human-readable descriptions for confirmation UI
 export const TOOL_DESCRIPTIONS: Record<string, {
   action: string
@@ -257,5 +299,16 @@ export const TOOL_DESCRIPTIONS: Record<string, {
     action: 'Delete Workflow',
     icon: '🗑️',
     confirmMessage: () => 'Permanently delete this workflow (cannot be undone)',
+  },
+  // Web search tools (no confirmation needed)
+  search_documentation: {
+    action: 'Search Documentation',
+    icon: '🔍',
+    confirmMessage: (args) => `Search for "${args.api_name}" API documentation`,
+  },
+  fetch_url: {
+    action: 'Fetch URL',
+    icon: '🌐',
+    confirmMessage: (args) => `Read content from ${args.url}`,
   },
 }

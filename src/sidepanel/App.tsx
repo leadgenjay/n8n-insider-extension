@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useAuthStore } from '@/stores/authStore'
 import { useContextCacheStore } from '@/stores/contextCacheStore'
+import { useChatStore } from '@/stores/chatStore'
 import { Header } from '@/components/layout/Header'
 import { ChatContainer } from '@/components/chat/ChatContainer'
 import { MessageInput } from '@/components/chat/MessageInput'
@@ -17,10 +18,21 @@ export default function App() {
   const [showWelcome, setShowWelcome] = useState(false)
   const { user, loading, initialize } = useAuthStore()
   const { invalidateCache } = useContextCacheStore()
+  const { createConversation } = useChatStore()
+  const conversationCreatedRef = useRef(false)
 
   useEffect(() => {
     initialize()
   }, [initialize])
+
+  // Create a new conversation when extension loads (after auth)
+  useEffect(() => {
+    if (user && !conversationCreatedRef.current) {
+      conversationCreatedRef.current = true
+      console.log('[App] Creating new conversation on load')
+      createConversation()
+    }
+  }, [user, createConversation])
 
   // Show welcome modal for new users
   useEffect(() => {

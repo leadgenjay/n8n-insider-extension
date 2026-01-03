@@ -14,6 +14,8 @@ import {
   type ActionResult,
 } from './n8n-actions'
 import { TOOLS_REQUIRING_CONFIRMATION, TOOL_DESCRIPTIONS } from './n8n-tools'
+import { searchWeb, fetchUrl } from './web-search'
+import { useSettingsStore } from '@/stores/settingsStore'
 
 // Parsed tool call from AI response
 export interface ToolCall {
@@ -68,7 +70,7 @@ export function parseToolCall(toolCall: ToolCall): ActionPreview {
     description: toolInfo.action,
     icon: toolInfo.icon,
     args,
-    requiresConfirmation: TOOLS_REQUIRING_CONFIRMATION.has(name), // ALL tools require confirmation
+    requiresConfirmation: TOOLS_REQUIRING_CONFIRMATION.has(name), // Only destructive n8n actions require confirmation
     confirmMessage: toolInfo.confirmMessage(args),
   }
 }
@@ -157,6 +159,83 @@ export async function executeToolCall(
       case 'delete_workflow':
         result = await deleteWorkflow(preview.args.workflow_id as string)
         break
+
+      case 'search_documentation': {
+        const { tavilyApiKey } = useSettingsStore.getState()
+        if (!tavilyApiKey) {
+          return {
+            toolCallId: toolCall.id,
+            toolName: preview.toolName,
+            success: false,
+            error: 'Web search not configured. Please add your Tavily API key in Settings.',
+          }
+        }
+        // Validate inputs
+        const query = preview.args.query
+        if (typeof query !== 'string' || !query.trim()) {
+          return {
+            toolCallId: toolCall.id,
+            toolName: preview.toolName,
+            success: false,
+            error: 'Invalid or missing search query',
+          }
+        }
+        try {
+          const searchResults = await searchWeb(query, tavilyApiKey)
+          return {
+            toolCallId: toolCall.id,
+            toolName: preview.toolName,
+            success: true,
+            result: {
+              api_name: preview.args.api_name,
+              results: searchResults.map((r) => ({
+                title: r.title,
+                url: r.url,
+                content: r.content,
+              })),
+            },
+          }
+        } catch (error) {
+          return {
+            toolCallId: toolCall.id,
+            toolName: preview.toolName,
+            success: false,
+            error: error instanceof Error ? error.message : 'Search failed',
+          }
+        }
+      }
+
+      case 'fetch_url': {
+        // Validate URL input
+        const url = preview.args.url
+        if (typeof url !== 'string' || !url.trim()) {
+          return {
+            toolCallId: toolCall.id,
+            toolName: preview.toolName,
+            success: false,
+            error: 'Invalid or missing URL',
+          }
+        }
+        try {
+          const content = await fetchUrl(url)
+          return {
+            toolCallId: toolCall.id,
+            toolName: preview.toolName,
+            success: true,
+            result: {
+              url: preview.args.url,
+              content: content,
+            },
+          }
+        } catch (error) {
+          return {
+            toolCallId: toolCall.id,
+            toolName: preview.toolName,
+            success: false,
+            error: error instanceof Error ? error.message : 'Failed to fetch URL',
+          }
+        }
+      }
 
       default:
         return {

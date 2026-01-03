@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { X, Check, AlertCircle, Loader2, LogOut, ExternalLink, CreditCard, Play } from 'lucide-react'
+import { X, Check, AlertCircle, Loader2, LogOut, ExternalLink, CreditCard, Play, Globe } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useSettingsStore, AI_MODELS, type AssistantMode } from '@/stores/settingsStore'
@@ -61,18 +61,23 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
     n8nInstanceUrl,
     n8nApiKey,
     openRouterApiKey,
+    tavilyApiKey,
     selectedModel,
     n8nConnected,
     openRouterConnected,
+    tavilyConnected,
     n8nError,
     openRouterError,
+    tavilyError,
     assistantMode,
     setN8nConfig,
     setOpenRouterConfig,
+    setTavilyConfig,
     setSelectedModel,
     setAssistantMode,
     testN8nConnection,
     testOpenRouterConnection,
+    testTavilyConnection,
   } = useSettingsStore()
 
   const { profile, signOut } = useAuthStore()
@@ -80,8 +85,10 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
   const [localN8nUrl, setLocalN8nUrl] = useState(n8nInstanceUrl)
   const [localN8nKey, setLocalN8nKey] = useState(n8nApiKey)
   const [localOpenRouterKey, setLocalOpenRouterKey] = useState(openRouterApiKey)
+  const [localTavilyKey, setLocalTavilyKey] = useState(tavilyApiKey)
   const [testingN8n, setTestingN8n] = useState(false)
   const [testingOpenRouter, setTestingOpenRouter] = useState(false)
+  const [testingTavily, setTestingTavily] = useState(false)
 
   const handleSaveN8n = async () => {
     setN8nConfig(localN8nUrl, localN8nKey)
@@ -95,6 +102,13 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
     setTestingOpenRouter(true)
     await testOpenRouterConnection()
     setTestingOpenRouter(false)
+  }
+
+  const handleSaveTavily = async () => {
+    setTavilyConfig(localTavilyKey)
+    setTestingTavily(true)
+    await testTavilyConnection()
+    setTestingTavily(false)
   }
 
   const handleSignOut = async () => {
@@ -295,6 +309,59 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
                   <p className="text-xs text-muted-foreground mt-0.5">{model.description}</p>
                 </button>
               ))}
+            </div>
+          </section>
+
+          {/* Web Search Configuration (Optional) */}
+          <section>
+            <div className="flex items-center gap-2 mb-2">
+              <Globe className="w-4 h-4 text-muted-foreground" />
+              <h3 className="text-sm font-medium">Web Search (Optional)</h3>
+            </div>
+            <p className="text-xs text-muted-foreground mb-4">
+              Enable AI to search for API documentation when troubleshooting
+            </p>
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs text-muted-foreground mb-1.5 block">Tavily API Key</label>
+                <Input
+                  type="password"
+                  placeholder="tvly-..."
+                  value={localTavilyKey}
+                  onChange={(e) => setLocalTavilyKey(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground mt-1.5">
+                  Free tier: 1000 searches/month.{' '}
+                  <a
+                    href="https://tavily.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline"
+                  >
+                    Get your key at tavily.com
+                  </a>
+                </p>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Button onClick={handleSaveTavily} disabled={testingTavily} size="sm">
+                    {testingTavily ? (
+                      <>
+                        <Loader2 className="w-3 h-3 animate-spin mr-2" />
+                        Testing...
+                      </>
+                    ) : (
+                      'Save & Test'
+                    )}
+                  </Button>
+                  <ConnectionStatus connected={tavilyConnected} />
+                </div>
+                {tavilyError && (
+                  <div className="p-2 bg-red-50 border border-red-200 rounded-md">
+                    <p className="text-xs text-red-700">{tavilyError}</p>
+                  </div>
+                )}
+              </div>
             </div>
           </section>
 

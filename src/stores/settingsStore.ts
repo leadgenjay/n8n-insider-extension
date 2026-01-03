@@ -37,11 +37,16 @@ interface SettingsState {
   openRouterApiKey: string
   selectedModel: AIModel
 
+  // Tavily Configuration (for web search)
+  tavilyApiKey: string
+
   // Connection Status
   n8nConnected: boolean
   openRouterConnected: boolean
+  tavilyConnected: boolean
   n8nError: string | null
   openRouterError: string | null
+  tavilyError: string | null
 
   // Assistant Mode
   assistantMode: AssistantMode
@@ -49,10 +54,12 @@ interface SettingsState {
   // Actions
   setN8nConfig: (url: string, apiKey: string) => void
   setOpenRouterConfig: (apiKey: string) => void
+  setTavilyConfig: (apiKey: string) => void
   setSelectedModel: (model: AIModel) => void
   setAssistantMode: (mode: AssistantMode) => void
   testN8nConnection: () => Promise<ConnectionTestResult>
   testOpenRouterConnection: () => Promise<ConnectionTestResult>
+  testTavilyConnection: () => Promise<ConnectionTestResult>
 }
 
 // Custom storage for Zustand persist using chrome.storage.local
@@ -84,11 +91,14 @@ export const useSettingsStore = create<SettingsState>()(
       n8nInstanceUrl: '',
       n8nApiKey: '',
       openRouterApiKey: '',
+      tavilyApiKey: '',
       selectedModel: 'anthropic/claude-sonnet-4',
       n8nConnected: false,
       openRouterConnected: false,
+      tavilyConnected: false,
       n8nError: null,
       openRouterError: null,
+      tavilyError: null,
       assistantMode: 'builder', // Default to builder mode
 
       setN8nConfig: (url: string, apiKey: string) => {
@@ -110,6 +120,10 @@ export const useSettingsStore = create<SettingsState>()(
 
       setOpenRouterConfig: (apiKey: string) => {
         set({ openRouterApiKey: apiKey, openRouterConnected: false })
+      },
+
+      setTavilyConfig: (apiKey: string) => {
+        set({ tavilyApiKey: apiKey, tavilyConnected: false })
       },
 
       setSelectedModel: (model: AIModel) => {
@@ -226,6 +240,50 @@ export const useSettingsStore = create<SettingsState>()(
         } catch (error) {
           const errorMessage = 'Cannot reach OpenRouter. Check your internet connection.'
           set({ openRouterConnected: false, openRouterError: errorMessage })
+          return { success: false, error: errorMessage }
+        }
+      },
+
+      testTavilyConnection: async (): Promise<ConnectionTestResult> => {
+        const { tavilyApiKey } = get()
+
+        if (!tavilyApiKey) {
+          const error = 'Please enter your Tavily API key'
+          set({ tavilyConnected: false, tavilyError: error })
+          return { success: false, error }
+        }
+
+        try {
+          // Test with a simple search query
+          const response = await fetch('https://api.tavily.com/search', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              api_key: tavilyApiKey,
+              query: 'test',
+              search_depth: 'basic',
+              max_results: 1,
+            }),
+          })
+
+          if (!response.ok) {
+            let error: string
+            if (response.status === 401 || response.status === 403) {
+              error = 'Invalid API key. Get your key at tavily.com'
+            } else {
+              error = `Connection failed (${response.status})`
+            }
+            set({ tavilyConnected: false, tavilyError: error })
+            return { success: false, error }
+          }
+
+          set({ tavilyConnected: true, tavilyError: null })
+          return { success: true }
+        } catch (error) {
+          const errorMessage = 'Cannot reach Tavily. Check your internet connection.'
+          set({ tavilyConnected: false, tavilyError: errorMessage })
           return { success: false, error: errorMessage }
         }
       },

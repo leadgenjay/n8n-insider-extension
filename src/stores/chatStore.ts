@@ -214,15 +214,27 @@ export const useChatStore = create<ChatState>((set, get) => ({
   generateAndSetTitle: async () => {
     const { currentConversation, messages } = get()
 
+    // Debug logging
+    console.log('[chatStore] generateAndSetTitle called:', {
+      hasConversation: !!currentConversation,
+      title: currentConversation?.title,
+      messageCount: messages.length,
+    })
+
     // Only generate title if:
     // 1. We have a current conversation
     // 2. The title is still the default "New Conversation"
     // 3. We have at least 2 messages (user question + assistant response)
-    if (
-      !currentConversation ||
-      currentConversation.title !== 'New Conversation' ||
-      messages.length < 2
-    ) {
+    if (!currentConversation) {
+      console.log('[chatStore] Skipping title generation: no current conversation')
+      return
+    }
+    if (currentConversation.title !== 'New Conversation') {
+      console.log('[chatStore] Skipping title generation: title already set to:', currentConversation.title)
+      return
+    }
+    if (messages.length < 2) {
+      console.log('[chatStore] Skipping title generation: only', messages.length, 'messages')
       return
     }
 
