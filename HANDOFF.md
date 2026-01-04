@@ -1,10 +1,55 @@
 # N8N Insider - Project Handoff
 
-**Last Updated:** January 3, 2026
+**Last Updated:** January 4, 2026
 
 ---
 
-## ✅ Completed Today (Jan 3, 2026)
+## ✅ Completed Today (Jan 4, 2026)
+
+### Admin API Edge Function
+
+Created a new Supabase Edge Function for user management via API (designed for n8n integration).
+
+**Endpoint:** `https://yndcawdtkpqulpzxkwif.supabase.co/functions/v1/admin-api`
+
+| Action | Required Fields | Description |
+|--------|----------------|-------------|
+| `create_user` | email, password | Create new user (no email verification) |
+| `grant_pro` | email | Set `is_lifetime = true` |
+| `revoke_pro` | email | Set `is_lifetime = false` |
+| `get_user` | email | Get user profile details |
+| `list_users` | - | List all users with status |
+
+**Authentication:** Bearer token via `Authorization: Bearer <ADMIN_API_KEY>` header
+
+**Files:**
+- `supabase/functions/admin-api/index.ts` - Edge Function code
+
+**Setup:**
+1. Set secret in Supabase Dashboard → Functions → Manage Secrets
+2. Add `ADMIN_API_KEY` with your chosen key
+
+**n8n Usage Example:**
+```
+POST https://yndcawdtkpqulpzxkwif.supabase.co/functions/v1/admin-api
+Authorization: Bearer your-api-key
+Content-Type: application/json
+
+{
+  "action": "create_user",
+  "email": "newuser@example.com",
+  "password": "tempPassword123"
+}
+```
+
+### Extension Download Updated
+
+- Rebuilt `n8n-insider-latest.zip` with web search feature
+- Deployed to https://n8ninsider.com/download via n8n-insiders Vercel project
+
+---
+
+## ✅ Completed Yesterday (Jan 3, 2026)
 
 ### New Features Implemented
 
@@ -209,7 +254,7 @@ src/
 ├── lib/
 │   ├── supabase.ts              # Profile interface with subscription fields
 │   ├── openrouter.ts            # System prompt, AI client, stripMarkdown()
-│   ├── web-search.ts            # NEW: Tavily API integration
+│   ├── web-search.ts            # Tavily API integration
 │   ├── n8n-tools.ts             # Tool definitions (n8n + web search)
 │   └── tool-executor.ts         # Tool execution handlers
 ├── components/
@@ -227,6 +272,13 @@ src/
     ├── chatStore.ts             # Conversations, title generation
     ├── settingsStore.ts         # API keys, model selection, Tavily
     └── feedbackStore.ts         # Feedback persistence
+
+supabase/
+└── functions/
+    ├── admin-api/
+    │   └── index.ts             # Admin API for user management (n8n integration)
+    └── stripe-webhook/
+        └── index.ts             # Stripe payment webhook handler
 ```
 
 ---
@@ -239,6 +291,7 @@ src/
 4. Create Stripe resources via MCP
 5. Update placeholder URLs in code
 6. Test end-to-end subscription flow
+7. **Investigate inbox-insiders Vercel** - User reported it shows landing page content (not modified by this session)
 
 ---
 
@@ -270,12 +323,9 @@ VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
 
 ## Git Status
 
-Uncommitted changes from this session:
-- `src/sidepanel/App.tsx` - New conversation on load
-- `src/lib/web-search.ts` - NEW file (Tavily integration)
-- `src/lib/n8n-tools.ts` - Web search tools
-- `src/lib/tool-executor.ts` - Web search handlers
-- `src/lib/openrouter.ts` - System prompt updates
-- `src/stores/settingsStore.ts` - Tavily config
-- `src/stores/chatStore.ts` - Title generation logging
-- `src/components/settings/SettingsPanel.tsx` - Tavily UI
+All changes committed and pushed to main branch.
+
+**Recent commits:**
+- `58991f3` - Add admin API Edge Function for user management
+- `8dc9f4e` - Add web search for API docs and auto-create conversation on load
+- `a223e75` - Add Loom video walkthrough and welcome modal
