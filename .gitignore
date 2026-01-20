@@ -29,3 +29,13 @@ coverage/
 # Temporary files
 *.tmp
 *.temp
+
+# Sensitive exports (may contain API keys in chat logs)
+supabase/exports/
+
+# MCP configuration (contains access tokens)
+.mcp.json
+
+# Migration scripts with service keys
+supabase/migrate*.sh
+supabase/import*.sh
