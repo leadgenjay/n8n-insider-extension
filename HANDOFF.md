@@ -1,10 +1,108 @@
 # N8N Insider - Project Handoff
 
-**Last Updated:** January 19, 2026
+**Last Updated:** January 20, 2026
 
 ---
 
-## ✅ Completed Today (Jan 19, 2026)
+## ✅ Completed Today (Jan 20, 2026)
+
+### Complete Data Migration
+
+Successfully migrated all data from old Supabase (`yndcawdtkpqulpzxkwif`) to new unified Supabase (`uprkqfygjhxudhdpqhju`).
+
+#### Database Records Migrated
+
+| Table | Records | Status |
+|-------|---------|--------|
+| templates | 172 | ✅ Migrated |
+| workflow_documentation | 171 | ✅ Migrated |
+| admin_users | 6 | ✅ Migrated |
+| workflow_snapshots | 0 | ✅ (empty source) |
+
+#### User Profile Migration
+
+Created smart migration system for 597 user profiles:
+
+| Component | Purpose |
+|-----------|---------|
+| `profile_migration_lookup` table | Stores old profile data by email |
+| `restore_migrated_profile()` trigger | Auto-restores data when user re-registers |
+
+When users sign up with their old email, their subscription status (is_lifetime, is_insiders, credits_balance, etc.) is automatically restored.
+
+#### Storage Buckets Migrated
+
+| Bucket | Files |
+|--------|-------|
+| templates | 33 files |
+| template-previews | 15 files |
+
+#### Migration Scripts Created
+
+```
+supabase/
+├── migrate.sh                    # Export from old Supabase
+├── import.sh                     # Import tables to new Supabase
+├── import_admin.sh               # Import admin users
+├── import_profile_migration.sh   # Import profile lookup data
+├── migrate_storage.sh            # Migrate storage buckets
+├── migrate_profiles.sql          # Profile migration SQL
+├── DATA_MIGRATION.md             # Migration documentation
+└── exports/                      # Exported JSON data
+```
+
+### Admin API Edge Function
+
+Deployed `admin-api` Edge Function to new Supabase for managing user access.
+
+**URL:** `https://uprkqfygjhxudhdpqhju.supabase.co/functions/v1/admin-api`
+**Auth:** `Authorization: Bearer 29KqD9gM6CFIna1Kaa7Dv1diNhjHbXBjvV6PMogF`
+**JWT Verification:** Disabled (uses custom API key auth)
+
+#### Available Actions
+
+| Action | Description |
+|--------|-------------|
+| `grant_pro` | Grant Chrome Extension lifetime access (is_lifetime: true) |
+| `grant_insiders` | Grant Templates access (is_insiders: true) |
+| `create_user` | Create new user (email + password required) |
+
+#### n8n Workflow Example
+
+```json
+{
+  "action": "grant_pro",
+  "email": "user@example.com"
+}
+```
+
+### Templates App API
+
+Existing Next.js API route for user management:
+
+**URL:** `https://templates.n8ninsider.com/api/admin/users`
+**Auth:** `x-api-key` header (ADMIN_API_KEY env var)
+
+Creates user + grants access in one call:
+```json
+{
+  "email": "user@example.com",
+  "password": "securepassword",
+  "name": "User Name",
+  "is_insiders": true,
+  "is_lifetime": true
+}
+```
+
+### Supabase Auth Configuration
+
+Updated in Supabase Dashboard:
+- **Site URL:** `https://templates.n8ninsider.com`
+- **Redirect URLs:** `https://templates.n8ninsider.com/**`, `https://n8ninsider.com/**`
+
+---
+
+## ✅ Completed (Jan 19, 2026)
 
 ### Unified Platform Migration
 
@@ -132,14 +230,22 @@ Update in Vercel dashboard for templates app:
 ## 📋 Remaining Tasks
 
 ### Immediate
-- [ ] Test password reset flow end-to-end
-- [ ] Verify SSO works across subdomains
-- [ ] Configure DNS for templates.n8ninsider.com
+- [x] Test password reset flow end-to-end
+- [x] Verify SSO works across subdomains
+- [x] Configure DNS for templates.n8ninsider.com
 
-### Future (Data Migration)
-- [ ] Migrate users from old Supabase projects
-- [ ] Migrate templates from old database
-- [ ] Migrate extension conversations/messages
+### Data Migration (COMPLETED)
+- [x] Migrate templates from old database (172 records)
+- [x] Migrate workflow_documentation (171 records)
+- [x] Migrate admin_users (6 records)
+- [x] Migrate storage buckets (templates, template-previews)
+- [x] Create profile migration lookup (597 profiles)
+- [x] Deploy admin-api Edge Function
+
+### Optional Future Tasks
+- [ ] Migrate old conversations/messages (if needed for history)
+- [ ] Update n8n workflows with new API endpoints
+- [ ] Configure custom SMTP sender email (noreply@n8ninsider.com)
 
 ---
 

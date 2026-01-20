@@ -1,0 +1,6 @@
+[{"id":"f1948c77-6423-4012-bffb-410fb5cb3546","auth_user_id":"eff60192-506c-49a2-a417-47b229928a25","email":"jay@leadgenjay.com","role":"super_admin","name":"jay","created_at":"2026-01-02T21:05:46.586633+00:00"}, 
+ {"id":"b13a681a-0a8b-4030-83ab-7986f287bdb2","auth_user_id":"4dd82771-9306-4fad-98e6-4e60d1e13760","email":"zeeshan@leadgenjay.com","role":"tech","name":"Zeeshan","created_at":"2026-01-12T18:58:46.399353+00:00"}, 
+ {"id":"7bf7e99a-e7e8-46e6-bf2c-c1080a1cf5e0","auth_user_id":"78a7be43-101c-4dc0-8cc3-bcb4ee798806","email":"faraz@leadgenjay.com","role":"tech","name":"Faraz","created_at":"2026-01-12T18:59:09.332897+00:00"}, 
+ {"id":"8f812de0-60c7-40bf-bb89-2ab51e0c56f8","auth_user_id":"525e450f-73bb-450c-9a4b-96d975b53c19","email":"jordan@leadgenjay.com","role":"billing","name":"Jordan Wiseman","created_at":"2026-01-12T21:08:51.376757+00:00"}, 
+ {"id":"4e33909c-c18c-467a-98d5-a5fe090cd328","auth_user_id":"3fd3b76e-e998-4f98-8c07-35bcb5c3abe8","email":"jhessa@leadgenjay.com","role":"billing","name":"Jhessa","created_at":"2026-01-12T21:09:09.115527+00:00"}, 
+ {"id":"32151dc6-e206-42a2-b8bb-9d85ea6fb7da","auth_user_id":"c291a66b-9c9e-4f1d-8993-3b9d214aa32e","email":"madison@leadgenjay.com","role":"billing","name":"Madison Popoff","created_at":"2026-01-12T21:52:23.817846+00:00"}]

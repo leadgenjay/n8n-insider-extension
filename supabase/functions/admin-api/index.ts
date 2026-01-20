@@ -1,5 +1,6 @@
-// Admin API for n8n AI Copilot
-// Manages users and Pro access via API key authentication
+// Admin API for n8n Insiders Platform
+// Manages users and access for both Chrome Extension (is_lifetime) and Templates (is_insiders)
+// API Key authentication required
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0'
@@ -14,7 +15,7 @@ const corsHeaders = {
 }
 
 interface RequestBody {
-  action: 'create_user' | 'grant_pro' | 'revoke_pro' | 'get_user' | 'list_users'
+  action: 'create_user' | 'grant_pro' | 'revoke_pro' | 'grant_insiders' | 'revoke_insiders' | 'get_user' | 'list_users'
   email?: string
   password?: string
 }
@@ -198,6 +199,92 @@ serve(async (req) => {
         )
       }
 
+      case 'grant_insiders': {
+        if (!email) {
+          return new Response(
+            JSON.stringify({ success: false, error: 'Email required' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          )
+        }
+
+        const { data, error } = await supabase
+          .from('profiles')
+          .update({
+            is_insiders: true,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('email', email)
+          .select()
+
+        if (error) {
+          console.error('Error granting Insiders:', error)
+          return new Response(
+            JSON.stringify({ success: false, error: error.message }),
+            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          )
+        }
+
+        if (!data || data.length === 0) {
+          return new Response(
+            JSON.stringify({ success: false, error: 'User not found' }),
+            { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          )
+        }
+
+        console.log('Insiders access granted:', email)
+        return new Response(
+          JSON.stringify({
+            success: true,
+            message: 'Insiders access granted (Templates)',
+            data: data[0],
+          }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+
+      case 'revoke_insiders': {
+        if (!email) {
+          return new Response(
+            JSON.stringify({ success: false, error: 'Email required' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          )
+        }
+
+        const { data, error } = await supabase
+          .from('profiles')
+          .update({
+            is_insiders: false,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('email', email)
+          .select()
+
+        if (error) {
+          console.error('Error revoking Insiders:', error)
+          return new Response(
+            JSON.stringify({ success: false, error: error.message }),
+            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          )
+        }
+
+        if (!data || data.length === 0) {
+          return new Response(
+            JSON.stringify({ success: false, error: 'User not found' }),
+            { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          )
+        }
+
+        console.log('Insiders access revoked:', email)
+        return new Response(
+          JSON.stringify({
+            success: true,
+            message: 'Insiders access revoked',
+            data: data[0],
+          }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+
       case 'get_user': {
         if (!email) {
           return new Response(
@@ -208,7 +295,7 @@ serve(async (req) => {
 
         const { data, error } = await supabase
           .from('profiles')
-          .select('id, email, is_lifetime, subscription_status, subscription_end_date, created_at, updated_at')
+          .select('id, email, is_lifetime, is_insiders, subscription_status, subscription_end_date, credits_balance, created_at, updated_at')
           .eq('email', email)
           .single()
 
@@ -238,7 +325,7 @@ serve(async (req) => {
       case 'list_users': {
         const { data, error } = await supabase
           .from('profiles')
-          .select('id, email, is_lifetime, subscription_status, subscription_end_date, created_at')
+          .select('id, email, is_lifetime, is_insiders, subscription_status, subscription_end_date, credits_balance, created_at')
           .order('created_at', { ascending: false })
 
         if (error) {
