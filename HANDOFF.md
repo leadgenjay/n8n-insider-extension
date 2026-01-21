@@ -1,10 +1,75 @@
 # N8N Insider - Project Handoff
 
-**Last Updated:** January 20, 2026
+**Last Updated:** January 20, 2026 (Session 2)
 
 ---
 
-## ✅ Completed Today (Jan 20, 2026)
+## ✅ Completed Today (Jan 20, 2026) - Session 2
+
+### Bug Fixes
+
+#### 1. Password Reset 404 Error (FIXED)
+**Issue:** Clicking password reset link from email resulted in 404.
+**Root Cause:** Supabase PKCE flow sends users to `/auth/confirm?token_hash=...&type=recovery` but route didn't exist.
+**Fix:** Created `src/app/auth/confirm/route.ts` to handle PKCE token verification.
+
+#### 2. RLS Infinite Recursion (FIXED)
+**Issue:** Templates page showed "Failed to load templates" after login.
+**Root Cause:** `admin_users` RLS policy was self-referential.
+**Fix:** SQL executed in Supabase dashboard:
+```sql
+DROP POLICY IF EXISTS "Admins can view admin users" ON public.admin_users;
+CREATE POLICY "Users can view own admin record" ON public.admin_users
+  FOR SELECT USING (auth_user_id = auth.uid());
+```
+
+#### 3. Broken Template Images (FIXED)
+**Issue:** Template images not loading (showing alt text).
+**Root Cause:** Images pointed to old Supabase but Next.js config only allowed new domain.
+**Fix:** Full storage migration (see below).
+
+### Full Storage Migration
+
+Migrated ALL storage from old Supabase to new unified Supabase:
+
+| Bucket | Files |
+|--------|-------|
+| template-images | 158 images |
+| templates | 212 JSON files |
+| **Total** | **370 files** |
+
+Updated 172 template `image_url` records in database.
+
+### UX/UI Improvements (Templates App)
+
+| Feature | Description |
+|---------|-------------|
+| Toast Notifications | Replaced `alert()` with `sonner` toasts |
+| Bug Report Button | Floating button to collect user feedback |
+| Skeleton Loaders | Loading animations for templates page |
+| Error Retry | Retry button on error states |
+| Admin Protection | Verify admin role in middleware |
+| Image Placeholders | Styled SVG fallback for missing images |
+| Promise Handling | Fixed unhandled rejections in UserNav |
+
+**New files created:**
+- `src/app/auth/confirm/route.ts` - PKCE handler
+- `src/app/templates/loading.tsx` - Loading state
+- `src/components/feedback/bug-report-button.tsx`
+- `src/components/templates/template-skeleton.tsx`
+- `src/components/templates/templates-error.tsx`
+
+**Git commits (n8n-LTF):**
+```
+3f48821 Add UX improvements: toasts, skeletons, error handling, and bug report
+3dbad48 Complete storage migration to new Supabase
+75917bc Allow images from old Supabase storage temporarily
+73b16c4 Fix password reset 404 by adding /auth/confirm route handler
+```
+
+---
+
+## ✅ Completed Today (Jan 20, 2026) - Session 1
 
 ### Complete Data Migration
 
