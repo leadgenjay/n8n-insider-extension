@@ -15,6 +15,15 @@ interface AuthState {
   signUpWithEmail: (email: string, password: string) => Promise<void>
   signOut: () => Promise<void>
   fetchProfile: () => Promise<void>
+  resetPassword: (email: string) => Promise<void>
+}
+
+// Helper to extract clean error message
+const getErrorMessage = (error: unknown): string => {
+  if (error instanceof Error) {
+    return error.message
+  }
+  return String(error)
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -49,7 +58,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         }
       })
     } catch (error) {
-      set({ error: String(error) })
+      set({ error: getErrorMessage(error) })
     } finally {
       set({ loading: false })
     }
@@ -66,7 +75,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       if (error) throw error
     } catch (error) {
-      set({ error: String(error) })
+      set({ error: getErrorMessage(error) })
       throw error
     } finally {
       set({ loading: false })
@@ -90,7 +99,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         await get().fetchProfile()
       }
     } catch (error) {
-      set({ error: String(error) })
+      set({ error: getErrorMessage(error) })
       throw error
     } finally {
       set({ loading: false })
@@ -107,7 +116,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       set({ user: null, session: null, profile: null })
     } catch (error) {
-      set({ error: String(error) })
+      set({ error: getErrorMessage(error) })
       throw error
     } finally {
       set({ loading: false })
@@ -130,6 +139,23 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       set({ profile: data })
     } catch (error) {
       console.error('Error fetching profile:', error)
+    }
+  },
+
+  resetPassword: async (email: string) => {
+    try {
+      set({ loading: true, error: null })
+
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: 'https://templates.n8ninsider.com/reset-password',
+      })
+
+      if (error) throw error
+    } catch (error) {
+      set({ error: getErrorMessage(error) })
+      throw error
+    } finally {
+      set({ loading: false })
     }
   },
 }))

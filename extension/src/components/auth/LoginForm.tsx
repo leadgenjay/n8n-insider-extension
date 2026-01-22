@@ -3,9 +3,11 @@ import { Mail, Lock, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useAuthStore } from '@/stores/authStore'
+import { ForgotPasswordForm } from './ForgotPasswordForm'
 
 export function LoginForm() {
   const [isSignUp, setIsSignUp] = useState(false)
+  const [showForgotPassword, setShowForgotPassword] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const { signInWithEmail, signUpWithEmail, loading, error } = useAuthStore()
@@ -21,6 +23,15 @@ export function LoginForm() {
     } catch {
       // Error is handled by the store
     }
+  }
+
+  if (showForgotPassword) {
+    return (
+      <ForgotPasswordForm 
+        onBack={() => setShowForgotPassword(false)}
+        onSuccess={() => {}}
+      />
+    )
   }
 
   return (
@@ -69,6 +80,18 @@ export function LoginForm() {
               </div>
             </div>
 
+            {!isSignUp && (
+              <div className="text-right">
+                <button
+                  type="button"
+                  className="text-xs text-primary hover:underline"
+                  onClick={() => setShowForgotPassword(true)}
+                >
+                  Forgot password?
+                </button>
+              </div>
+            )}
+
             {error && (
               <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
                 <p className="text-xs text-destructive">{error}</p>
@@ -102,7 +125,7 @@ export function LoginForm() {
         </div>
 
         <p className="text-center text-xs text-muted-foreground mt-6">
-          By continuing, you agree to our Terms of Service and Privacy Policy
+          By continuing, you agree to our <a href="https://templates.n8ninsider.com/terms" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Terms of Service</a> and <a href="https://templates.n8ninsider.com/privacy" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Privacy Policy</a>
         </p>
       </div>
     </div>
