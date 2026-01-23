@@ -58,6 +58,11 @@ export function ForgotPasswordForm({ onBack }: ForgotPasswordFormProps) {
               <p className="text-sm text-muted-foreground mb-4">
                 We sent a password reset link to <strong>{email}</strong>
               </p>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                <p className="text-xs text-blue-800">
+                  <strong>Note:</strong> The reset link will open on our website. Don't worry — your account works for both the extension and the N8N Insider website. Once you reset your password there, use it to sign in here.
+                </p>
+              </div>
               <p className="text-xs text-muted-foreground mb-6">
                 Click the link in the email to reset your password.
               </p>
