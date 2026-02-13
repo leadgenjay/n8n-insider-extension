@@ -1,0 +1,20 @@
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Allow example/placeholder values"
+regexTarget = "match"
+regexes = [
+  '''sk_live_xxxx+''',
+  '''YOUR_API_KEY''',
+  '''your_api_key''',
+  '''evapi_your_api_key''',
+  '''REPLACE_ME''',
+  '''xxxxxxxxxxxx''',
+]
+
+paths = [
+  '''\.env\.example$''',
+  '''\.env\.sample$''',
+  '''\.env\.template$''',
+]
