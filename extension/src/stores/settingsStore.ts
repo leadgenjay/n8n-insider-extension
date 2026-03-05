@@ -217,7 +217,7 @@ export const useSettingsStore = create<SettingsState>()(
         }
 
         try {
-          const response = await fetch('https://openrouter.ai/api/v1/models', {
+          const response = await fetch('https://openrouter.ai/api/v1/key', {
             method: 'GET',
             headers: {
               'Authorization': `Bearer ${openRouterApiKey}`,
