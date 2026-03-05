@@ -121,7 +121,7 @@ supabase/
 Deployed `admin-api` Edge Function to new Supabase for managing user access.
 
 **URL:** `https://uprkqfygjhxudhdpqhju.supabase.co/functions/v1/admin-api`
-**Auth:** `Authorization: Bearer 29KqD9gM6CFIna1Kaa7Dv1diNhjHbXBjvV6PMogF`
+**Auth:** `Authorization: Bearer <REDACTED>`
 **JWT Verification:** Disabled (uses custom API key auth)
 
 #### Available Actions
@@ -271,16 +271,16 @@ n8n-insider-extension/
 
 ```env
 VITE_SUPABASE_URL=https://uprkqfygjhxudhdpqhju.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwcmtxZnlnamh4dWRoZHBxaGp1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY4MDE2MDcsImV4cCI6MjA1MjM3NzYwN30.LYT1GHHHb3r6Z5T1SrHMiRQ5fVbF4bUMYl23JoqGKqk
+VITE_SUPABASE_ANON_KEY=<REDACTED - see .env.local>
 ```
 
 ### Templates App (`n8n-LTF/.env.local`)
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://uprkqfygjhxudhdpqhju.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-ADMIN_API_KEY=29KqD9gM6CFIna1Kaa7Dv1diNhjHbXBjvV6PMogF
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<REDACTED - see .env.local>
+SUPABASE_SERVICE_ROLE_KEY=<REDACTED - see .env.local>
+ADMIN_API_KEY=<REDACTED - see .env.local>
 ```
 
 ### Vercel Environment Variables

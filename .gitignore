@@ -39,3 +39,6 @@ supabase/exports/
 # Migration scripts with service keys
 supabase/migrate*.sh
 supabase/import*.sh
+
+# Never commit user exports
+supabase/exports/
